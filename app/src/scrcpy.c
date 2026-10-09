@@ -929,7 +929,20 @@ aoa_complete:
     }
 
     if (options->spout) {
-        if (!sc_spout_sink_init(&s->spout_sink)) {
+        // Reuse the renderer's D3D11 device (shared with the D3D11VA decoder)
+        // so the Spout sender can send decoded GPU textures without a
+        // cross-device copy. NULL when the renderer is not Direct3D 11.
+        void *d3d11_device = NULL;
+        if (screen_initialized) {
+            SDL_PropertiesID props =
+                SDL_GetRendererProperties(s->screen.renderer);
+            if (props) {
+                d3d11_device = SDL_GetPointerProperty(props,
+                    SDL_PROP_RENDERER_D3D11_DEVICE_POINTER, NULL);
+            }
+        }
+
+        if (!sc_spout_sink_init(&s->spout_sink, d3d11_device)) {
             goto end;
         }
         spout_sink_initialized = true;

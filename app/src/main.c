@@ -22,6 +22,19 @@
 #ifdef _WIN32
 #include <windows.h>
 #include "util/str.h"
+
+// Request the high-performance (discrete) GPU from the driver's Optimus /
+// dynamic-switching layer.
+//
+// The D3D11 device created by SDL is also reused by the D3D11VA decoder and by
+// the Spout sender. Without this, that device may be created on the integrated
+// GPU while OBS renders on the discrete GPU: Spout shares its textures with a
+// legacy handle, which a device on another adapter cannot open (OBS then shows
+// the sender but fails with E_INVALIDARG / 0x80070057). Exporting these
+// well-known symbols makes D3D11CreateDevice() (with the default adapter, as
+// SDL does) pick the discrete GPU, so scrcpy and OBS run on the same adapter.
+__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
 static int
