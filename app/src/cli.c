@@ -1031,8 +1031,8 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_SPOUT,
         .longopt = "spout",
         .text = "Forward video frames to a Spout sender (for OBS, etc.).\n"
-                "Currently a debug/validation feature: it only logs the "
-                "decoded frame properties.",
+                "Requires a D3D11-capable build on Windows. Software-decoded "
+                "frames are forwarded (see --hwdec).",
     },
     {
         .shortopt = 'w',
@@ -3076,7 +3076,7 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     }
 
     if (opts->video && !opts->video_playback && !opts->record_filename
-            && !v4l2) {
+            && !v4l2 && !opts->spout) {
         LOGI("No video playback, no recording, no V4L2 sink: video disabled");
         opts->video = false;
     }

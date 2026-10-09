@@ -81,18 +81,40 @@ feature_test_macros = [
 
 conf = configuration_data()
 
+# Spout2 core sources (Windows only). The prebuilt SpoutDX library exports
+# MSVC-mangled symbols, which GCC cannot link against, so the Spout2 core is
+# compiled from source with the same toolchain. The source tree is referenced
+# relatively (../../.. from this file).
+# Use a plain relative path string (not meson.current_source_dir()): an absolute
+# source-dir path containing unresolved '..' makes meson's lexical
+# path_is_in_root() check wrongly reject it as an in-source-tree absolute path.
+spout_dir = '../../../Spout2/Spout2-master/SPOUTSDK'
+spout_inc = include_directories(
+    spout_dir / 'SpoutDirectX/SpoutDX',
+    spout_dir / 'SpoutGL',
+)
+
 if host_machine.system() == 'windows'
     windows = import('windows')
     src += [
         'src/util/command.c',
         'src/sys/win/file.c',
         'src/sys/win/process.c',
+        'src/spout_sender.cpp',
+        spout_dir / 'SpoutDirectX/SpoutDX/SpoutDX.cpp',
+        spout_dir / 'SpoutGL/SpoutCopy.cpp',
+        spout_dir / 'SpoutGL/SpoutDirectX.cpp',
+        spout_dir / 'SpoutGL/SpoutFrameCount.cpp',
+        spout_dir / 'SpoutGL/SpoutSenderNames.cpp',
+        spout_dir / 'SpoutGL/SpoutSharedMemory.cpp',
+        spout_dir / 'SpoutGL/SpoutUtils.cpp',
         windows.compile_resources('scrcpy-windows.rc'),
     ]
     feature_test_macros += [
         '-D_WIN32_WINNT=0x0600',
         '-DWINVER=0x0600',
     ]
+    add_project_arguments('-DSPOUT_BUILD_STATIC', '-msse4', language: 'cpp')
 else
     src += [
         'src/sys/unix/file.c',
@@ -148,6 +170,7 @@ dependencies = [
     dependency('libavcodec', version: '>= 60.3', static: static),
     dependency('libavutil', version: '>= 58.2', static: static),
     dependency('libswresample', static: static),
+    dependency('libswscale', static: static),
     dependency('sdl3', version: '>= 3.2.0', static: static),
 ]
 
@@ -178,6 +201,15 @@ endif
 if host_machine.system() == 'windows'
     dependencies += cc.find_library('mingw32')
     dependencies += cc.find_library('ws2_32')
+
+    # Spout2 (DirectX) dependencies
+    spout_libs = [
+        'd3d11', 'dxgi', 'd3d9', 'winmm', 'comctl32', 'ole32', 'oleaut32',
+        'uuid', 'version', 'advapi32', 'shell32', 'gdi32', 'user32', 'psapi',
+    ]
+    foreach lib : spout_libs
+        dependencies += cc.find_library(lib)
+    endforeach
 endif
 
 check_functions = [
@@ -238,7 +270,7 @@ src_dir = include_directories('src')
 
 executable('scrcpy', src,
            dependencies: dependencies,
-           include_directories: src_dir,
+           include_directories: [src_dir, spout_inc],
            install: true,
            c_args: [])
 
