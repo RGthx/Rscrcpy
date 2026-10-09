@@ -27,6 +27,7 @@
 #include "screen.h"
 #include "sdl_hints.h"
 #include "server.h"
+#include "spout_sink.h"
 #include "uhid/gamepad_uhid.h"
 #include "uhid/keyboard_uhid.h"
 #include "uhid/mouse_uhid.h"
@@ -62,6 +63,7 @@ struct scrcpy {
     struct sc_hwdec hwdec;
     struct sc_recorder recorder;
     struct sc_video_regulator video_regulator;
+    struct sc_spout_sink spout_sink;
 #ifdef HAVE_V4L2
     struct sc_v4l2_sink v4l2_sink;
     struct sc_video_regulator v4l2_regulator;
@@ -396,6 +398,7 @@ scrcpy(struct scrcpy_options *options) {
     bool file_pusher_initialized = false;
     bool recorder_initialized = false;
     bool recorder_started = false;
+    bool spout_sink_initialized = false;
 #ifdef HAVE_V4L2
     bool v4l2_sink_initialized = false;
     bool v4l2_regulator_initialized = false;
@@ -851,6 +854,7 @@ aoa_complete:
 
     bool needs_video_decoder = options->video_playback;
     bool needs_audio_decoder = options->audio_playback;
+    needs_video_decoder |= options->spout;
 #ifdef HAVE_V4L2
     needs_video_decoder |= !!options->v4l2_device;
 #endif
@@ -922,6 +926,18 @@ aoa_complete:
         }
 
         sc_frame_source_add_sink(src, &s->screen.frame_sink);
+    }
+
+    if (options->spout) {
+        if (!sc_spout_sink_init(&s->spout_sink)) {
+            goto end;
+        }
+        spout_sink_initialized = true;
+
+        // Attach directly to the decoder frame_source (bypassing the video
+        // regulator) for minimal latency (see AgentPlan D2)
+        sc_frame_source_add_sink(&s->video_decoder.frame_source,
+                                 &s->spout_sink.frame_sink);
     }
 
     if (options->audio_playback) {
@@ -1127,6 +1143,10 @@ end:
 
     if (video_regulator_initialized) {
         sc_video_regulator_destroy(&s->video_regulator);
+    }
+
+    if (spout_sink_initialized) {
+        sc_spout_sink_destroy(&s->spout_sink);
     }
 
 #ifdef HAVE_V4L2

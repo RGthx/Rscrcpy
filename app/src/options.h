@@ -330,6 +330,7 @@ struct scrcpy_options {
     bool control;
     bool video_playback;
     bool audio_playback;
+    bool spout;
     bool turn_screen_off;
     enum sc_key_inject_mode key_inject_mode;
     bool window_aspect_ratio_lock;

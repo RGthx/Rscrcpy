@@ -35,6 +35,7 @@ src = [
     'src/screen.c',
     'src/sdl_hints.c',
     'src/server.c',
+    'src/spout_sink.c',
     'src/texture.c',
     'src/version.c',
     'src/video_regulator.c',

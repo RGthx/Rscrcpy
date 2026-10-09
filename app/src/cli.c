@@ -112,6 +112,7 @@ enum {
     OPT_IGNORE_VIDEO_ENCODER_CONSTRAINTS,
     OPT_NO_TERMINAL_TITLE,
     OPT_HWDEC,
+    OPT_SPOUT,
 };
 
 struct sc_option {
@@ -1025,6 +1026,13 @@ static const struct sc_option options[] = {
         .text = "Select the video source (display or camera).\n"
                 "Camera mirroring requires Android 12+.\n"
                 "Default is display.",
+    },
+    {
+        .longopt_id = OPT_SPOUT,
+        .longopt = "spout",
+        .text = "Forward video frames to a Spout sender (for OBS, etc.).\n"
+                "Currently a debug/validation feature: it only logs the "
+                "decoded frame properties.",
     },
     {
         .shortopt = 'w',
@@ -3010,6 +3018,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+            case OPT_SPOUT:
+                opts->spout = true;
+                break;
             default:
                 // getopt prints the error message on stderr
                 return false;
@@ -3139,6 +3150,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         return false;
     }
 #endif
+
+    if (opts->spout && !opts->video) {
+        LOGE("Spout sink requires video capture, but --no-video was set.");
+        return false;
+    }
 
     if (opts->control && opts->video_source == SC_VIDEO_SOURCE_DISPLAY) {
         if (opts->keyboard_input_mode == SC_KEYBOARD_INPUT_MODE_AUTO) {
