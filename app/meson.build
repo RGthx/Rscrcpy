@@ -83,12 +83,12 @@ conf = configuration_data()
 
 # Spout2 core sources (Windows only). The prebuilt SpoutDX library exports
 # MSVC-mangled symbols, which GCC cannot link against, so the Spout2 core is
-# compiled from source with the same toolchain. The source tree is referenced
-# relatively (../../.. from this file).
+# compiled from source with the same toolchain. The SDK is vendored in-tree
+# under vendor/spout2/SPOUTSDK and referenced relatively from this file.
 # Use a plain relative path string (not meson.current_source_dir()): an absolute
 # source-dir path containing unresolved '..' makes meson's lexical
 # path_is_in_root() check wrongly reject it as an in-source-tree absolute path.
-spout_dir = '../../../Spout2/Spout2-master/SPOUTSDK'
+spout_dir = '../vendor/spout2/SPOUTSDK'
 spout_inc = include_directories(
     spout_dir / 'SpoutDirectX/SpoutDX',
     spout_dir / 'SpoutGL',
