@@ -1,9 +1,15 @@
 > [!WARNING]
-> **This GitHub repo (<https://github.com/Genymobile/scrcpy>) is the only official
-source for the project. Do not download releases from random websites, even if
-their name contains `scrcpy`.**
+> **The upstream GitHub repo (<https://github.com/Genymobile/scrcpy>) is the only
+official source for the project. Do not download releases from random websites,
+even if their name contains `scrcpy`.**
 
-# scrcpy (v5.0.1)
+> [!IMPORTANT]
+> **This is a personal fork: [`RGthx/Rscrcpy`](https://github.com/RGthx/Rscrcpy).
+> Based on scrcpy v5.0.1, it adds a Windows-only [Spout2][spout2] video output
+> (`--spout`) so the mirrored screen can be consumed by OBS and other
+> Spout-enabled applications. Everything else is unmodified upstream scrcpy.**
+
+# scrcpy (v5.0.1) — Spout2 fork
 
 <img src="app/data/scrcpy.svg" width="128" height="128" alt="scrcpy" align="right" />
 
@@ -49,6 +55,53 @@ Its features include:
 
 [hid-keyboard]: doc/keyboard.md#physical-keyboard-simulation
 [hid-mouse]: doc/mouse.md#physical-mouse-simulation
+
+## Spout2 output (fork feature)
+
+This fork forwards the decoded video frames to a [Spout2][spout2] sender named
+`scrcpy`, so the device screen can be used as a source in OBS (via the
+[obs-spout2 plugin][obs-spout2]) or any other Spout receiver, with the usual low
+latency of scrcpy:
+
+```bash
+scrcpy --spout
+```
+
+Spout2 relies on DirectX shared textures, so this feature is **Windows-only**
+(D3D11). It requires video capture (it is incompatible with `--no-video`).
+
+Two transfer paths are selected automatically:
+
+ - **GPU (zero-copy)**: with a D3D11 hardware decoder, the decoded NV12 texture
+   is converted to BGRA by the D3D11 video processor and sent directly to the
+   shared texture (`SendTexture`), without any CPU round-trip.
+ - **CPU**: with software decoding, the YUV420P frame is converted to BGRA with
+   libswscale and sent with `SendImage`.
+
+### Building
+
+The Spout2 core is **vendored in-tree** under
+[`vendor/spout2/SPOUTSDK`](vendor/spout2/SPOUTSDK) and compiled from source
+(the prebuilt SpoutDX library exports MSVC-mangled symbols, which MinGW/GCC
+cannot link against), so no external Spout2 path is required: just clone and
+build.
+
+The usual [scrcpy build prerequisites](doc/build.md) still apply: a C/C++
+compiler, [meson](https://mesonbuild.com/), [ninja](https://ninja-build.org/),
+and the FFmpeg and SDL3 **development** packages discoverable via `pkg-config`.
+
+With MinGW-w64 GCC (the configuration this fork is developed and tested with):
+
+```bash
+meson setup build --buildtype=release -Dcompile_server=false
+ninja -C build
+```
+
+The client is built at `build/app/scrcpy.exe`. Add `-Dusb=false` if `libusb-1.0`
+is not installed.
+
+[spout2]: https://github.com/leadedge/Spout2
+[obs-spout2]: https://github.com/Off-World-Live/obs-spout2-plugin
 
 ## Prerequisites
 
