@@ -100,6 +100,12 @@ ninja -C build
 The client is built at `build/app/scrcpy.exe`. Add `-Dusb=false` if `libusb-1.0`
 is not installed.
 
+> [!WARNING]
+> This fork currently builds on **Windows only** (MinGW-w64 or MSVC). The Spout2
+> integration is compiled unconditionally, so a Linux or macOS build fails at
+> link time (`undefined reference to 'sc_spout_sender_*'`). Upstream scrcpy
+> supports Linux and macOS, but this Spout2 fork does not.
+
 [spout2]: https://github.com/leadedge/Spout2
 [obs-spout2]: https://github.com/Off-World-Live/obs-spout2-plugin
 
